@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>eCharts_map</title>
+</head>
+<body>
+<div style="height:740px;width: 100%;background: #08081F;">
+    <div id="map" style="height:740px;width: 1024px;margin: 0 auto;"></div>
+</div>
+</body>
+<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/china.js"></script>
+<script type="text/javascript" src="js/utils.js"></script>
+<script type="text/javascript">
+    let myChart = echarts.init(document.getElementById('map'));
+
+    function getOption() {
+        return {
+            title: {},
+            legend: {},
+            geo: [],
+            series: []
+        };
+
+    }
+
+    function getGeo(mapName, codes) {
+        return {
+            type: 'map',
+            map: mapName,
+            left: 10,
+            right: 5,
+            top: 10,
+            bottom: 10,
+            selectedMode: 'single',
+            label: {
+                // 静态的时候展示样式
+                normal: {
+                    // 是否显示地图省份的名称
+                    show: true,
+                    textStyle: {
+                        color: "#fff",
+                    },
+                },
+                // 动态展示的样式
+                emphasis: {
+                    // 设置鼠标放到地图上面的字体颜色
+                    color: '#ee032f',
+                },
+            },
+            // 图形样式
+            itemStyle: {
+                // 默认状态下地图的设置
+                normal: {
+                    // 显示地区名称并设置字体颜色
+                    label: {show: true, color: '#F7F7F7'},
+                    // 设置区域边框宽度
+                    // borderWidth: 2,
+                    // 设置区域边框颜色
+                    borderColor: '#f8f529',
+                    // 设置地图区域背景颜色，这儿设置了透明度为0
+                    areaColor: 'rgba(128, 128, 128, 0)',
+
+                },
+            },
+            regions: codes
+        }
+
+    }
+
+    // 初始化地图，有code就进行下钻，没有就回到初始化中国地图，code是行政区划代码
+    function initMap(code, name) {
+        myChart.clear();
+        if (code !== "" && code !== undefined) {
+            return linkage(code, name);
+        }
+        if (name === "" || code === undefined) {
+            name = 'china';
+        }
+        renderMap(name);
+        // 单击下钻
+        myChart.on('click', function (params) {
+            let code = params.region.code;
+            let name = params.region.name;
+            // 联动到该州市，重新进入初始化地图
+            initMap(code, name);
+        });
+    }
+
+    // 地级市联动，下钻
+    function linkage(code, name) {
+
+        let url = "";
+        if ("0000" === code.toString().substring(2)) {
+            url = "json/100000/" + code + ".geoJson";
+        } else {
+            url = "json/100000/" + code.toString().substring(0, 2) + "0000/" + code + ".geoJson";
+        }
+        $.getJSON(url, function (data) {
+            echarts.registerMap(name, data);
+            renderMap(name);
+        });
+    }
+
+    // 渲染地图
+    function renderMap(name) {
+        myChart.clear();
+        let option = getOption();
+        option.geo.push(getGeo(name, utils[name]));
+        myChart.setOption(option, true);
+    }
+
+    initMap();
+</script>
+</html>
